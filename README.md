@@ -30,9 +30,20 @@ parseLinkedInProfilePath('invalid input');
 - Case-insensitive `in/` matching
 - Returns `null` for invalid input
 
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+This starts a dev server with:
+- TypeScript watch mode (auto-recompiles on changes)
+- Live reload (browser refreshes automatically)
+
 ## Demo
 
-Open `index.html` in a browser (requires `npm run build` first).
+Run `npm run dev` and open http://localhost:8080 in your browser.
 
 ## License
 

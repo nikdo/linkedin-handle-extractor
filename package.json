@@ -15,11 +15,13 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev": "npx serve ."
+    "dev": "tsc && concurrently \"tsc --watch\" \"live-server --watch=dist\""
   },
   "devDependencies": {
+    "concurrently": "^9.0.0",
+    "live-server": "^1.2.0",
     "typescript": "^5.3.0",
-    "vitest": "^2.0.0"
+    "vitest": "^4.0.17"
   },
   "keywords": [
     "linkedin",
