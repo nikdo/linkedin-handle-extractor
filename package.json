@@ -1,0 +1,33 @@
+{
+  "name": "linkedin-profile-path-parser",
+  "version": "1.0.0",
+  "description": "Extract and normalize LinkedIn profile paths from messy user input",
+  "type": "module",
+  "main": "dist/parseLinkedInProfilePath.js",
+  "types": "dist/parseLinkedInProfilePath.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/parseLinkedInProfilePath.js",
+      "types": "./dist/parseLinkedInProfilePath.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "npx serve ."
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^2.0.0"
+  },
+  "keywords": [
+    "linkedin",
+    "profile",
+    "path",
+    "handle",
+    "parser",
+    "url"
+  ],
+  "license": "MIT"
+}

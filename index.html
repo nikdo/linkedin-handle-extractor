@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedIn Profile Path Parser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 2.5rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+      font-size: 1.25rem;
+    }
+
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.375rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.625rem 1rem;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.5);
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab:hover {
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab.active {
+      color: #fff;
+      background: rgba(0, 119, 181, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 119, 181, 0.2);
+    }
+
+    /* Tab panels */
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    input {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    input:focus {
+      border-color: #0077b5;
+      background: rgba(0, 119, 181, 0.08);
+      box-shadow: 0 0 0 4px rgba(0, 119, 181, 0.15);
+    }
+
+    input.error {
+      border-color: #e53e3e;
+      background: rgba(229, 62, 62, 0.08);
+    }
+
+    input.error:focus {
+      box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.15);
+    }
+
+    input.valid {
+      border-color: #38a169;
+      background: rgba(56, 161, 105, 0.08);
+    }
+
+    input.valid:focus {
+      box-shadow: 0 0 0 4px rgba(56, 161, 105, 0.15);
+    }
+
+    .feedback {
+      min-height: 1.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+
+    .feedback.error {
+      color: #fc8181;
+    }
+
+    .feedback.success {
+      color: #68d391;
+    }
+
+    .result {
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: rgba(56, 161, 105, 0.1);
+      border: 1px solid rgba(56, 161, 105, 0.3);
+      border-radius: 12px;
+      display: none;
+    }
+
+    .result.visible {
+      display: block;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .result-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: rgba(104, 211, 145, 0.8);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.125rem;
+      color: #68d391;
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .hint {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.4);
+      line-height: 1.6;
+    }
+
+    .hint code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    /* Live mode specific */
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #38a169;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .live-indicator.error .live-dot {
+      background: #e53e3e;
+      animation: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="logo">
+        <div class="logo-icon">in</div>
+        <div class="logo-text">LinkedIn</div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="parse">Parse only</button>
+        <button class="tab" data-tab="live">Parse in input</button>
+      </div>
+      
+      <!-- Parse only tab -->
+      <div id="panel-parse" class="tab-panel active">
+        <div class="form-group">
+          <label for="parse-input">LinkedIn</label>
+          <input 
+            type="text" 
+            id="parse-input" 
+            placeholder="/in/handle"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <div id="parse-feedback" class="feedback"></div>
+        </div>
+
+        <div id="parse-result" class="result">
+          <div class="result-label">Profile Path</div>
+          <div id="parse-result-value" class="result-value"></div>
+        </div>
+
+        <div class="hint">
+          Paste a LinkedIn URL like <code>linkedin.com/in/handle</code> or just type <code>in/handle</code>
+        </div>
+      </div>
+
+      <!-- Parse in input tab -->
+      <div id="panel-live" class="tab-panel">
+        <div class="form-group">
+          <label for="live-input">LinkedIn</label>
+          <input 
+            type="text" 
+            id="live-input" 
+            placeholder="/in/handle"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <div id="live-feedback" class="feedback"></div>
+          <div id="live-indicator" class="live-indicator" style="display: none;">
+            <span class="live-dot"></span>
+            <span id="live-status">Auto-parsing enabled</span>
+          </div>
+        </div>
+
+        <div class="hint">
+          Paste a LinkedIn URL and it will be <strong>instantly converted</strong> to the profile path format
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Parses messy user input and extracts a normalized LinkedIn profile path.
+     * @param {string} input - Messy user input
+     * @returns {string|null} Normalized profile path as "/in/<handle>" or null
+     */
+    function parseLinkedInProfilePath(input) {
+      // Find the first occurrence of "in/" (case-insensitive)
+      const lowerInput = input.toLowerCase();
+      const inIndex = lowerInput.indexOf('in/');
+      
+      if (inIndex === -1) {
+        return null;
+      }
+
+      // Start scanning the handle from after "in/"
+      const startIndex = inIndex + 3; // length of "in/"
+      
+      // Delimiters that terminate the handle
+      const delimiters = new Set([
+        '/', '?', '#', '\\',           // URL/path delimiters
+        ')', ']', '>',                 // closing brackets
+        '.', ',', '…', '—', '–', '·',  // punctuation
+      ]);
+      
+      let handle = '';
+      let i = startIndex;
+      
+      while (i < input.length) {
+        const char = input[i];
+        
+        // Check for whitespace
+        if (/\s/.test(char)) {
+          break;
+        }
+        
+        // Check for delimiters
+        if (delimiters.has(char)) {
+          break;
+        }
+        
+        // Check for percent-encoding (%XX)
+        if (char === '%') {
+          if (i + 2 < input.length && /^[0-9A-Fa-f]{2}$/.test(input.slice(i + 1, i + 3))) {
+            handle += input.slice(i, i + 3);
+            i += 3;
+            continue;
+          } else {
+            // Invalid percent encoding - treat as delimiter
+            break;
+          }
+        }
+        
+        // Check if it's a valid handle character:
+        // - Unicode letters (\p{L})
+        // - Unicode marks (\p{M})
+        // - Unicode numbers (\p{N})
+        // - ASCII hyphen (-)
+        if (/[\p{L}\p{M}\p{N}\-]/u.test(char)) {
+          handle += char;
+          i++;
+          continue;
+        }
+        
+        // Any other character is a delimiter
+        break;
+      }
+      
+      // Reject empty handle
+      if (handle === '') {
+        return null;
+      }
+      
+      // If handle contains %, try to decode URI components
+      if (handle.includes('%')) {
+        try {
+          handle = decodeURIComponent(handle);
+        } catch {
+          // Decoding failed - invalid percent encoding
+          return null;
+        }
+      }
+      
+      return `/in/${handle}`;
+    }
+
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab;
+        
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Update active panel
+        panels.forEach(p => p.classList.remove('active'));
+        document.getElementById(`panel-${targetTab}`).classList.add('active');
+        
+        // Focus the input in the active panel
+        const input = document.querySelector(`#panel-${targetTab} input`);
+        if (input) input.focus();
+      });
+    });
+
+    // ============ Parse Only Mode ============
+    const parseInput = document.getElementById('parse-input');
+    const parseFeedback = document.getElementById('parse-feedback');
+    const parseResult = document.getElementById('parse-result');
+    const parseResultValue = document.getElementById('parse-result-value');
+
+    parseInput.addEventListener('input', () => {
+      const value = parseInput.value.trim();
+      
+      if (value === '') {
+        parseInput.classList.remove('error', 'valid');
+        parseFeedback.textContent = '';
+        parseFeedback.classList.remove('error', 'success');
+        parseResult.classList.remove('visible');
+        return;
+      }
+
+      const parsed = parseLinkedInProfilePath(value);
+      
+      if (parsed === null) {
+        parseInput.classList.add('error');
+        parseInput.classList.remove('valid');
+        parseFeedback.textContent = 'Invalid LinkedIn URL or profile path';
+        parseFeedback.classList.add('error');
+        parseFeedback.classList.remove('success');
+        parseResult.classList.remove('visible');
+      } else {
+        parseInput.classList.add('valid');
+        parseInput.classList.remove('error');
+        parseFeedback.textContent = '';
+        parseFeedback.classList.remove('error');
+        parseResult.classList.add('visible');
+        parseResultValue.textContent = parsed;
+      }
+    });
+
+    // ============ Live Parse Mode ============
+    const liveInput = document.getElementById('live-input');
+    const liveFeedback = document.getElementById('live-feedback');
+    const liveIndicator = document.getElementById('live-indicator');
+    const liveStatus = document.getElementById('live-status');
+
+    // Track if the current value is already a parsed path (to avoid re-parsing)
+    let lastParsedValue = '';
+
+    liveInput.addEventListener('input', () => {
+      const value = liveInput.value;
+      
+      if (value === '') {
+        liveInput.classList.remove('error', 'valid');
+        liveFeedback.textContent = '';
+        liveFeedback.classList.remove('error');
+        liveIndicator.style.display = 'none';
+        lastParsedValue = '';
+        return;
+      }
+
+      // If the value is exactly what we parsed to, don't re-process
+      if (value === lastParsedValue) {
+        return;
+      }
+
+      const parsed = parseLinkedInProfilePath(value);
+      
+      if (parsed === null) {
+        // Invalid input
+        liveInput.classList.add('error');
+        liveInput.classList.remove('valid');
+        liveFeedback.textContent = 'Invalid LinkedIn URL or profile path';
+        liveFeedback.classList.add('error');
+        liveIndicator.style.display = 'flex';
+        liveIndicator.classList.add('error');
+        liveStatus.textContent = 'Waiting for valid input...';
+        lastParsedValue = '';
+      } else {
+        // Valid - replace input with parsed profile path
+        liveInput.classList.add('valid');
+        liveInput.classList.remove('error');
+        liveFeedback.textContent = '';
+        liveFeedback.classList.remove('error');
+        liveIndicator.style.display = 'flex';
+        liveIndicator.classList.remove('error');
+        liveStatus.textContent = 'Auto-parsing enabled';
+        
+        // Only replace if different from current value
+        if (value !== parsed) {
+          lastParsedValue = parsed;
+          liveInput.value = parsed;
+        }
+      }
+    });
+
+    // Focus first input on load
+    parseInput.focus();
+  </script>
+</body>
+</html>
