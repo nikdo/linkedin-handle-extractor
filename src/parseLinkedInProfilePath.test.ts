@@ -315,15 +315,22 @@ describe('parseLinkedInProfilePath', () => {
   });
 
   describe('input length limits', () => {
-    const cases: [string, string | null][] = [
-      ['in/' + 'a'.repeat(100), '/in/' + 'a'.repeat(100)],
-      ['in/' + 'a'.repeat(2000), '/in/' + 'a'.repeat(2000)],
-      ['a'.repeat(2048), null], // no in/ but at limit
-      ['a'.repeat(2049), null], // over limit, rejected early
-    ];
+    it('accepts handle with 100 characters', () => {
+      const handle = 'a'.repeat(100);
+      expect(parseLinkedInProfilePath('in/' + handle)).toBe('/in/' + handle);
+    });
 
-    it.each(cases)('%s → %s', (input, expected) => {
-      expect(parseLinkedInProfilePath(input)).toBe(expected);
+    it('accepts handle with 2000 characters', () => {
+      const handle = 'a'.repeat(2000);
+      expect(parseLinkedInProfilePath('in/' + handle)).toBe('/in/' + handle);
+    });
+
+    it('returns null for 2048 chars without in/', () => {
+      expect(parseLinkedInProfilePath('a'.repeat(2048))).toBe(null);
+    });
+
+    it('returns null for input over 2048 chars (rejected early)', () => {
+      expect(parseLinkedInProfilePath('a'.repeat(2049))).toBe(null);
     });
   });
 });
