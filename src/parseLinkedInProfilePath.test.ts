@@ -204,10 +204,24 @@ describe('parseLinkedInProfilePath', () => {
       ['in/handle--with--dashes', '/in/handle--with--dashes'],
       ['in/-', '/in/-'],
       ['in/123456789', '/in/123456789'],
-      ['in/John-DOE', '/in/John-DOE'],
+      ['in/John-DOE', '/in/john-doe'],
       ['in/john_doe', '/in/john_doe'],
       ['in/user_name_123', '/in/user_name_123'],
       ['in/_underscore_', '/in/_underscore_'],
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
+    });
+  });
+
+  describe('output is lowercased', () => {
+    const cases: [string, string][] = [
+      ['in/JohnDoe', '/in/johndoe'],
+      ['in/UPPERCASE', '/in/uppercase'],
+      ['in/MixedCase-Handle', '/in/mixedcase-handle'],
+      ['https://linkedin.com/in/John-Smith', '/in/john-smith'],
+      ['IN/ALLCAPS', '/in/allcaps'],
     ];
 
     it.each(cases)('%s → %s', (input, expected) => {
@@ -219,9 +233,9 @@ describe('parseLinkedInProfilePath', () => {
     const cases: [string, string][] = [
       ['in/český-uživatel', '/in/český-uživatel'],
       ['in/josé-garcía', '/in/josé-garcía'],
-      ['in/Łukasz-Żółć', '/in/Łukasz-Żółć'],
-      ['in/İstanbul-ş', '/in/İstanbul-ş'],
-      ['in/Živjo', '/in/Živjo'],
+      ['in/Łukasz-Żółć', '/in/łukasz-żółć'],
+      ['in/İstanbul-ş', '/in/i̇stanbul-ş'],
+      ['in/Živjo', '/in/živjo'],
       ['in/名字', '/in/名字'],
       ['in/名-字', '/in/名-字'],
       ['in/ユーザー名', '/in/ユーザー名'],
@@ -245,7 +259,7 @@ describe('parseLinkedInProfilePath', () => {
       ['https://www.linkedin.com/in/jos%C3%A9-garc%C3%ADa', '/in/josé-garcía'],
       ['https://www.linkedin.com/in/%C5%A1t%C4%9Bp%C3%A1n-%C5%99eh%C3%A1k-988589206/', '/in/štěpán-řehák-988589206'],
       ['text in/%E5%90%8D%E5%AD%97 more', '/in/名字'],
-      ['random IN/%C5%BDlu%C5%A5ou%C4%8Dk%C3%BD', '/in/Žluťoučký'],
+      ['random IN/%C5%BDlu%C5%A5ou%C4%8Dk%C3%BD', '/in/žluťoučký'],
     ];
 
     it.each(cases)('%s → %s', (input, expected) => {

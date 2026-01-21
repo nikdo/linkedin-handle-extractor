@@ -40,5 +40,5 @@ export function parseLinkedInProfilePath(input: string): `/in/${string}` | null 
     handle += char;
   }
   
-  return handle ? `/in/${handle}` as `/in/${string}` : null;
+  return handle ? `/in/${handle.toLowerCase()}` as `/in/${string}` : null;
 }
