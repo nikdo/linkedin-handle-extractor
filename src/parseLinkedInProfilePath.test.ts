@@ -3,412 +3,308 @@ import { parseLinkedInProfilePath } from './parseLinkedInProfilePath';
 
 describe('parseLinkedInProfilePath', () => {
   describe('full LinkedIn URLs', () => {
-    it('parses https URL', () => {
-      expect(parseLinkedInProfilePath('https://www.linkedin.com/in/john-doe')).toBe('/in/john-doe');
-    });
+    const cases: [string, string][] = [
+      ['https://www.linkedin.com/in/john-doe', '/in/john-doe'],
+      ['http://www.linkedin.com/in/john-doe', '/in/john-doe'],
+      ['https://linkedin.com/in/jane-smith', '/in/jane-smith'],
+      ['http://linkedin.com/in/jane-smith', '/in/jane-smith'],
+      ['https://linkedin.com/in/user123/', '/in/user123'],
+      ['https://linkedin.com/in/some-user?utm_source=google', '/in/some-user'],
+      ['https://linkedin.com/in/another-user#section', '/in/another-user'],
+      ['https://linkedin.com//in/user', '/in/user'],
+    ];
 
-    it('parses http URL', () => {
-      expect(parseLinkedInProfilePath('http://linkedin.com/in/jane-smith')).toBe('/in/jane-smith');
-    });
-
-    it('parses URL with trailing slash', () => {
-      expect(parseLinkedInProfilePath('https://linkedin.com/in/user123/')).toBe('/in/user123');
-    });
-
-    it('parses URL with query params', () => {
-      expect(parseLinkedInProfilePath('https://linkedin.com/in/some-user?utm_source=google')).toBe('/in/some-user');
-    });
-
-    it('parses URL with hash', () => {
-      expect(parseLinkedInProfilePath('https://linkedin.com/in/another-user#section')).toBe('/in/another-user');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
   describe('URLs without scheme', () => {
-    it('parses www.linkedin.com', () => {
-      expect(parseLinkedInProfilePath('www.linkedin.com/in/myprofile')).toBe('/in/myprofile');
-    });
+    const cases: [string, string][] = [
+      ['www.linkedin.com/in/myprofile', '/in/myprofile'],
+      ['linkedin.com/in/myprofile', '/in/myprofile'],
+    ];
 
-    it('parses linkedin.com', () => {
-      expect(parseLinkedInProfilePath('linkedin.com/in/myprofile')).toBe('/in/myprofile');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
   describe('LinkedIn subdomains', () => {
-    it('parses cz.linkedin.com', () => {
-      expect(parseLinkedInProfilePath('https://cz.linkedin.com/in/czech-user')).toBe('/in/czech-user');
-    });
+    const cases: [string, string][] = [
+      ['https://cz.linkedin.com/in/czech-user', '/in/czech-user'],
+      ['https://m.linkedin.com/in/mobile-user', '/in/mobile-user'],
+      ['https://mobile.linkedin.com/in/another-mobile', '/in/another-mobile'],
+      ['cz.linkedin.com/in/handle', '/in/handle'],
+      ['fr.linkedin.com/in/handle', '/in/handle'],
+      ['de.linkedin.com/in/handle', '/in/handle'],
+      ['m.linkedin.com/in/handle', '/in/handle'],
+      ['mobile.linkedin.com/in/handle', '/in/handle'],
+    ];
 
-    it('parses m.linkedin.com', () => {
-      expect(parseLinkedInProfilePath('https://m.linkedin.com/in/mobile-user')).toBe('/in/mobile-user');
-    });
-
-    it('parses mobile.linkedin.com', () => {
-      expect(parseLinkedInProfilePath('https://mobile.linkedin.com/in/another-mobile')).toBe('/in/another-mobile');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
   describe('path-only forms', () => {
-    it('parses in/handle', () => {
-      expect(parseLinkedInProfilePath('in/john-doe')).toBe('/in/john-doe');
-    });
+    const cases: [string, string][] = [
+      ['in/john-doe', '/in/john-doe'],
+      ['/in/jane-smith', '/in/jane-smith'],
+      ['IN/handle', '/in/handle'],
+      ['/IN/handle', '/in/handle'],
+      ['In/mixedcase', '/in/mixedcase'],
+      ['iN/weirdcase', '/in/weirdcase'],
+    ];
 
-    it('parses /in/handle', () => {
-      expect(parseLinkedInProfilePath('/in/jane-smith')).toBe('/in/jane-smith');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
   describe('arbitrary text containing profile path', () => {
-    it('extracts profile path from text', () => {
-      expect(parseLinkedInProfilePath('Check out my profile at in/cool-person please!')).toBe('/in/cool-person');
-    });
+    const cases: [string, string][] = [
+      ['Check out my profile at in/cool-person please!', '/in/cool-person'],
+      ['Contact me: https://linkedin.com/in/business-guy — thanks!', '/in/business-guy'],
+      ['text in/handle text', '/in/handle'],
+      ['prefix/in/handle', '/in/handle'],
+      ['<https://www.linkedin.com/in/handle>', '/in/handle'],
+      ['(https://www.linkedin.com/in/handle)', '/in/handle'],
+      ['https://www.linkedin.com/in/handle).', '/in/handle'],
+      [' https://www.linkedin.com/in/handle ', '/in/handle'],
+      ['https://www.linkedin.com/in/handle,', '/in/handle'],
+    ];
 
-    it('handles text with URL embedded', () => {
-      expect(parseLinkedInProfilePath('Contact me: https://linkedin.com/in/business-guy — thanks!')).toBe('/in/business-guy');
-    });
-
-    it('extracts first occurrence', () => {
-      expect(parseLinkedInProfilePath('in/first-user and in/second-user')).toBe('/in/first-user');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
   describe('in/ appearing inside another word', () => {
-    it('matches in/boo from limpin/boo', () => {
-      expect(parseLinkedInProfilePath('limpin/boo')).toBe('/in/boo');
-    });
+    const cases: [string, string][] = [
+      ['limpin/boo', '/in/boo'],
+      ['somethingin/handle', '/in/handle'],
+      ['origin/handle', '/in/handle'],
+      ['begin/handle', '/in/handle'],
+      ['linkin/handle', '/in/handle'],
+    ];
 
-    it('matches in/handle from somethingin/handle', () => {
-      expect(parseLinkedInProfilePath('somethingin/handle')).toBe('/in/handle');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
-  describe('case insensitivity of in/', () => {
-    it('handles IN/', () => {
-      expect(parseLinkedInProfilePath('IN/uppercase')).toBe('/in/uppercase');
-    });
+  describe('trailing slashes and separators', () => {
+    const cases: [string, string][] = [
+      ['linkedin.com/in/handle/', '/in/handle'],
+      ['linkedin.com/in/handle////', '/in/handle'],
+      ['in/user/extra', '/in/user'],
+    ];
 
-    it('handles In/', () => {
-      expect(parseLinkedInProfilePath('In/mixedcase')).toBe('/in/mixedcase');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
+  });
 
-    it('handles iN/', () => {
-      expect(parseLinkedInProfilePath('iN/weirdcase')).toBe('/in/weirdcase');
+  describe('query and fragment parameters', () => {
+    const cases: [string, string][] = [
+      ['linkedin.com/in/handle?trk=public_profile', '/in/handle'],
+      ['linkedin.com/in/handle#experience', '/in/handle'],
+      ['linkedin.com/in/handle/?originalSubdomain=cz', '/in/handle'],
+      ['linkedin.com/in/handle?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base', '/in/handle'],
+      ['in/handle?x=y', '/in/handle'],
+      ['in/handle#frag', '/in/handle'],
+      ['in/handle/?x=y', '/in/handle'],
+      ['in/user?param=value', '/in/user'],
+      ['in/user#anchor', '/in/user'],
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
+    });
+  });
+
+  describe('extra path after handle', () => {
+    const cases: [string, string][] = [
+      ['linkedin.com/in/handle/details/experience', '/in/handle'],
+      ['linkedin.com/in/handle/recent-activity/all/', '/in/handle'],
+      ['linkedin.com/in/handle/overlay/contact-info/', '/in/handle'],
+      ['text in/名字/extra/path', '/in/名字'],
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
+    });
+  });
+
+  describe('multiple matches picks first', () => {
+    const cases: [string, string][] = [
+      ['in/first-user and in/second-user', '/in/first-user'],
+      ['foo in/first bar in/second', '/in/first'],
+      ['in/one in/two', '/in/one'],
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
   describe('handle terminators', () => {
-    it('stops at /', () => {
-      expect(parseLinkedInProfilePath('in/user/extra')).toBe('/in/user');
-    });
+    const cases: [string, string][] = [
+      ['in/user is here', '/in/user'],
+      ['in/user\\path', '/in/user'],
+      ['(see in/user)', '/in/user'],
+      ['[in/user]', '/in/user'],
+      ['<in/user>', '/in/user'],
+      ['in/user.', '/in/user'],
+      ['in/user, another', '/in/user'],
+      ['in/user…more', '/in/user'],
+      ['in/user—dash', '/in/user'],
+      ['in/user–endash', '/in/user'],
+      ['in/user·dot', '/in/user'],
+      ['in/user\tnext', '/in/user'],
+      ['in/user\nnext', '/in/user'],
+      ['text in/handle))))', '/in/handle'],
+      ['text in/handle\\more', '/in/handle'],
+    ];
 
-    it('stops at ?', () => {
-      expect(parseLinkedInProfilePath('in/user?param=value')).toBe('/in/user');
-    });
-
-    it('stops at #', () => {
-      expect(parseLinkedInProfilePath('in/user#anchor')).toBe('/in/user');
-    });
-
-    it('stops at whitespace', () => {
-      expect(parseLinkedInProfilePath('in/user is here')).toBe('/in/user');
-    });
-
-    it('stops at backslash', () => {
-      expect(parseLinkedInProfilePath('in/user\\path')).toBe('/in/user');
-    });
-
-    it('stops at )', () => {
-      expect(parseLinkedInProfilePath('(see in/user)')).toBe('/in/user');
-    });
-
-    it('stops at ]', () => {
-      expect(parseLinkedInProfilePath('[in/user]')).toBe('/in/user');
-    });
-
-    it('stops at >', () => {
-      expect(parseLinkedInProfilePath('<in/user>')).toBe('/in/user');
-    });
-
-    it('stops at .', () => {
-      expect(parseLinkedInProfilePath('in/user.')).toBe('/in/user');
-    });
-
-    it('stops at ,', () => {
-      expect(parseLinkedInProfilePath('in/user, another')).toBe('/in/user');
-    });
-
-    it('stops at …', () => {
-      expect(parseLinkedInProfilePath('in/user…more')).toBe('/in/user');
-    });
-
-    it('stops at —', () => {
-      expect(parseLinkedInProfilePath('in/user—dash')).toBe('/in/user');
-    });
-
-    it('stops at –', () => {
-      expect(parseLinkedInProfilePath('in/user–endash')).toBe('/in/user');
-    });
-
-    it('stops at ·', () => {
-      expect(parseLinkedInProfilePath('in/user·dot')).toBe('/in/user');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
-  describe('Unicode support', () => {
-    it('handles Czech characters', () => {
-      expect(parseLinkedInProfilePath('in/český-uživatel')).toBe('/in/český-uživatel');
-    });
+  describe('non-ASCII punctuation ends handle', () => {
+    const cases: [string, string][] = [
+      ['Text: in/handle…', '/in/handle'],
+      ['Text: in/handle—more', '/in/handle'],
+      ['Text: in/handle–more', '/in/handle'],
+      ['in/handle·middle', '/in/handle'],
+    ];
 
-    it('handles Chinese characters', () => {
-      expect(parseLinkedInProfilePath('in/名字')).toBe('/in/名字');
-    });
-
-    it('handles Russian characters', () => {
-      expect(parseLinkedInProfilePath('in/пользователь')).toBe('/in/пользователь');
-    });
-
-    it('handles Arabic characters', () => {
-      expect(parseLinkedInProfilePath('in/علي-بن-أحمد')).toBe('/in/علي-بن-أحمد');
-    });
-
-    it('handles mixed Unicode and ASCII', () => {
-      expect(parseLinkedInProfilePath('in/john-doe-名字')).toBe('/in/john-doe-名字');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
-  describe('percent-encoding', () => {
-    it('decodes percent-encoded handle', () => {
-      expect(parseLinkedInProfilePath('in/john%2Ddoe')).toBe('/in/john-doe');
-    });
+  describe('characters that stop handle parsing', () => {
+    const cases: [string, string][] = [
+      ['in/john.doe', '/in/john'],
+      ['in/john_doe', '/in/john'],
+      ['in/john doe', '/in/john'],
+      ['in/handle.', '/in/handle'],
+      ['in/handle..', '/in/handle'],
+    ];
 
-    it('decodes unicode percent-encoding', () => {
-      // %C4%8D is the UTF-8 encoding of č
-      expect(parseLinkedInProfilePath('in/%C4%8Desk%C3%BD')).toBe('/in/český');
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
+  });
 
-    it('handles mixed encoded and plain characters', () => {
-      expect(parseLinkedInProfilePath('in/user%40name')).toBe('/in/user@name');
+  describe('valid handle characters', () => {
+    const cases: [string, string][] = [
+      ['in/handle--with--dashes', '/in/handle--with--dashes'],
+      ['in/-', '/in/-'],
+      ['in/123456789', '/in/123456789'],
+      ['in/John-DOE', '/in/John-DOE'],
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
+  });
 
-    it('stops at invalid percent-encoding', () => {
-      // %GG is not valid hex, so % acts as a terminator
-      expect(parseLinkedInProfilePath('in/user%GG')).toBe('/in/user');
+  describe('Unicode handles', () => {
+    const cases: [string, string][] = [
+      ['in/český-uživatel', '/in/český-uživatel'],
+      ['in/josé-garcía', '/in/josé-garcía'],
+      ['in/Łukasz-Żółć', '/in/Łukasz-Żółć'],
+      ['in/İstanbul-ş', '/in/İstanbul-ş'],
+      ['in/Živjo', '/in/Živjo'],
+      ['in/名字', '/in/名字'],
+      ['in/名-字', '/in/名-字'],
+      ['in/ユーザー名', '/in/ユーザー名'],
+      ['in/사용자', '/in/사용자'],
+      ['in/пользователь', '/in/пользователь'],
+      ['in/علي-بن-أحمد', '/in/علي-بن-أحمد'],
+      ['in/john-doe-名字', '/in/john-doe-名字'],
+      ['text in/č-ž-ř-ď-ť-ň?x=y', '/in/č-ž-ř-ď-ť-ň'],
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
+  });
 
-    it('stops at incomplete percent-encoding', () => {
-      // %2 at end is incomplete, so % acts as a terminator
-      expect(parseLinkedInProfilePath('in/user%2')).toBe('/in/user');
+  describe('percent-encoded handles', () => {
+    const cases: [string, string][] = [
+      ['in/john%2Ddoe', '/in/john-doe'],
+      ['in/%C4%8Desk%C3%BD', '/in/český'],
+      ['in/user%40name', '/in/user@name'],
+      ['in/%C4%8Desk%C3%BD-u%C5%BEivatel', '/in/český-uživatel'],
+      ['https://www.linkedin.com/in/jos%C3%A9-garc%C3%ADa', '/in/josé-garcía'],
+      ['https://www.linkedin.com/in/%C5%A1t%C4%9Bp%C3%A1n-%C5%99eh%C3%A1k-988589206/', '/in/štěpán-řehák-988589206'],
+      ['text in/%E5%90%8D%E5%AD%97 more', '/in/名字'],
+      ['in/handle%20with%20spaces', '/in/handle with spaces'],
+      ['random IN/%C5%BDlu%C5%A5ou%C4%8Dk%C3%BD', '/in/Žluťoučký'],
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
+  });
 
-    it('returns null for malformed UTF-8 in percent-encoding', () => {
-      // %FF%FE is not valid UTF-8
-      expect(parseLinkedInProfilePath('in/%FF%FE')).toBe(null);
+  describe('invalid or incomplete percent-encoding', () => {
+    const cases: [string, string | null][] = [
+      ['in/user%GG', '/in/user'],
+      ['in/user%2', '/in/user'],
+      ['in/%FF%FE', null],
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
   describe('empty handle rejection', () => {
-    it('returns null for in/ at end of string', () => {
-      expect(parseLinkedInProfilePath('in/')).toBe(null);
-    });
+    const cases: [string, null][] = [
+      ['in/', null],
+      ['in/?', null],
+      ['in/ space', null],
+      ['linkedin.com/in', null],
+      ['linkedin.com/in?x=y', null],
+      ['linkedin.com/in#frag', null],
+      ['in/?trk=public_profile', null],
+      ['in/#frag', null],
+      ['text in/ more', null],
+      ['text in/?x=y', null],
+      ['text in/#frag', null],
+      ['text in/, next', null],
+      ['text in/) end', null],
+      ['text in/> end', null],
+    ];
 
-    it('returns null for in/ followed by delimiter', () => {
-      expect(parseLinkedInProfilePath('in/?')).toBe(null);
-    });
-
-    it('returns null for in/ followed by whitespace', () => {
-      expect(parseLinkedInProfilePath('in/ space')).toBe(null);
+    it.each(cases)('%s → null', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 
   describe('no valid profile path', () => {
-    it('returns null for empty string', () => {
-      expect(parseLinkedInProfilePath('')).toBe(null);
-    });
-
-    it('returns null for unrelated text', () => {
-      expect(parseLinkedInProfilePath('Hello, world!')).toBe(null);
-    });
-
-    it('returns null for in without slash', () => {
-      expect(parseLinkedInProfilePath('I am in love')).toBe(null);
-    });
-
-    it('returns null for random URL', () => {
-      expect(parseLinkedInProfilePath('https://google.com/search')).toBe(null);
-    });
-  });
-
-  describe('edge cases', () => {
-    it('handles multiple slashes before in/', () => {
-      expect(parseLinkedInProfilePath('https://linkedin.com//in/user')).toBe('/in/user');
-    });
-
-    it('handles tab character as whitespace', () => {
-      expect(parseLinkedInProfilePath('in/user\tnext')).toBe('/in/user');
-    });
-
-    it('handles newline as whitespace', () => {
-      expect(parseLinkedInProfilePath('in/user\nnext')).toBe('/in/user');
-    });
-
-    it('handles hyphen-only handle', () => {
-      expect(parseLinkedInProfilePath('in/-')).toBe('/in/-');
-    });
-
-    it('handles numeric handle', () => {
-      expect(parseLinkedInProfilePath('in/123456789')).toBe('/in/123456789');
-    });
-
-    it('preserves case in handle', () => {
-      expect(parseLinkedInProfilePath('in/John-DOE')).toBe('/in/John-DOE');
-    });
-  });
-
-  describe('comprehensive test cases', () => {
-    const cases = [
-      // Canonical URLs
-      { input: "https://www.linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "http://www.linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "https://linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "http://linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "www.linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "linkedin.com/in/handle", valid: true, handle: "handle" },
-
-      // Subdomains
-      { input: "cz.linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "fr.linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "de.linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "m.linkedin.com/in/handle", valid: true, handle: "handle" },
-      { input: "mobile.linkedin.com/in/handle", valid: true, handle: "handle" },
-
-      // Trailing slash / separators
-      { input: "linkedin.com/in/handle/", valid: true, handle: "handle" },
-      { input: "linkedin.com/in/handle////", valid: true, handle: "handle" },
-
-      // Query / fragment after handle
-      { input: "linkedin.com/in/handle?trk=public_profile", valid: true, handle: "handle" },
-      { input: "linkedin.com/in/handle#experience", valid: true, handle: "handle" },
-      { input: "linkedin.com/in/handle/?originalSubdomain=cz", valid: true, handle: "handle" },
-      {
-        input: "linkedin.com/in/handle?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base",
-        valid: true,
-        handle: "handle",
-      },
-
-      // Extra path after handle (ignored)
-      { input: "linkedin.com/in/handle/details/experience", valid: true, handle: "handle" },
-      { input: "linkedin.com/in/handle/recent-activity/all/", valid: true, handle: "handle" },
-      { input: "linkedin.com/in/handle/overlay/contact-info/", valid: true, handle: "handle" },
-
-      // Path-only shorthand
-      { input: "in/handle", valid: true, handle: "handle" },
-      { input: "/in/handle", valid: true, handle: "handle" },
-      { input: "IN/handle", valid: true, handle: "handle" },
-      { input: "/IN/handle", valid: true, handle: "handle" },
-
-      // Extract from arbitrary text
-      { input: "text in/handle text", valid: true, handle: "handle" },
-      { input: "prefix/in/handle", valid: true, handle: "handle" },
-      { input: "<https://www.linkedin.com/in/handle>", valid: true, handle: "handle" },
-      { input: "(https://www.linkedin.com/in/handle)", valid: true, handle: "handle" },
-      { input: "https://www.linkedin.com/in/handle).", valid: true, handle: "handle" },
-      { input: " https://www.linkedin.com/in/handle ", valid: true, handle: "handle" },
-      { input: "https://www.linkedin.com/in/handle,", valid: true, handle: "handle" },
-
-      // Query/fragment in shorthand
-      { input: "in/handle?x=y", valid: true, handle: "handle" },
-      { input: "in/handle#frag", valid: true, handle: "handle" },
-      { input: "in/handle/?x=y", valid: true, handle: "handle" },
-
-      // Multiple matches: pick first
-      { input: "foo in/first bar in/second", valid: true, handle: "first" },
-      { input: "in/one in/two", valid: true, handle: "one" },
-
-      // Unicode handles
-      { input: "in/český-uživatel", valid: true, handle: "český-uživatel" },
-      { input: "in/josé-garcía", valid: true, handle: "josé-garcía" },
-      { input: "in/Łukasz-Żółć", valid: true, handle: "Łukasz-Żółć" },
-      { input: "in/İstanbul-ş", valid: true, handle: "İstanbul-ş" },
-      { input: "in/Živjo", valid: true, handle: "Živjo" },
-      { input: "in/名字", valid: true, handle: "名字" },
-      { input: "in/名-字", valid: true, handle: "名-字" },
-      { input: "in/ユーザー名", valid: true, handle: "ユーザー名" },
-      { input: "in/사용자", valid: true, handle: "사용자" },
-      { input: "in/пользователь", valid: true, handle: "пользователь" },
-      { input: "in/علي-بن-أحمد", valid: true, handle: "علي-بن-أحمد" },
-
-      // Percent-encoded handles (decode recommended)
-      { input: "in/%C4%8Desk%C3%BD-u%C5%BEivatel", valid: true, handle: "český-uživatel" },
-      { input: "https://www.linkedin.com/in/jos%C3%A9-garc%C3%ADa", valid: true, handle: "josé-garcía" },
-      { input: "https://www.linkedin.com/in/%C5%A1t%C4%9Bp%C3%A1n-%C5%99eh%C3%A1k-988589206/", valid: true, handle: "štěpán-řehák-988589206" },
-      { input: "text in/%E5%90%8D%E5%AD%97 more", valid: true, handle: "名字" },
-      { input: "in/handle%20with%20spaces", valid: true, handle: "handle with spaces" },
-
-      // Non-ASCII punctuation ends handle
-      { input: "Text: in/handle…", valid: true, handle: "handle" },
-      { input: "Text: in/handle—more", valid: true, handle: "handle" },
-      { input: "Text: in/handle–more", valid: true, handle: "handle" },
-      { input: "in/handle·middle", valid: true, handle: "handle" },
-
-      // Characters not allowed inside handle: stop at delimiter
-      { input: "in/handle--with--dashes", valid: true, handle: "handle--with--dashes" },
-      { input: "in/john.doe", valid: true, handle: "john" },
-      { input: "in/john_doe", valid: true, handle: "john" },
-      { input: "in/john doe", valid: true, handle: "john" },
-      { input: "in/handle.", valid: true, handle: "handle" },
-      { input: "in/handle..", valid: true, handle: "handle" },
-
-      // Invalids
-      { input: "in", valid: false, handle: null },
-      { input: "IN", valid: false, handle: null },
-      { input: "linkedin.com/in", valid: false, handle: null },
-      { input: "linkedin.com/in?x=y", valid: false, handle: null },
-      { input: "linkedin.com/in#frag", valid: false, handle: null },
-      { input: "in/", valid: false, handle: null },
-      { input: "in/ ", valid: false, handle: null },
-      { input: "in/?trk=public_profile", valid: false, handle: null },
-      { input: "in/#frag", valid: false, handle: null },
-      { input: "text in/ more", valid: false, handle: null },
-      { input: "text in/?x=y", valid: false, handle: null },
-      { input: "text in/#frag", valid: false, handle: null },
-      { input: "text in/, next", valid: false, handle: null },
-      { input: "text in/) end", valid: false, handle: null },
-      { input: "text in/> end", valid: false, handle: null },
-      { input: "in\\handle", valid: false, handle: null },
-      { input: "in:handle", valid: false, handle: null },
-      { input: "in|handle", valid: false, handle: null },
-      { input: "", valid: false, handle: null },
-      { input: "   ", valid: false, handle: null },
-      { input: "<>", valid: false, handle: null },
-      // Note: current implementation matches "in/" anywhere, so these extract "handle"
-      { input: "origin/handle", valid: true, handle: "handle" },
-      { input: "begin/handle", valid: true, handle: "handle" },
-      { input: "linkin/handle", valid: true, handle: "handle" },
-
-      // More valids
-      { input: "random IN/%C5%BDlu%C5%A5ou%C4%8Dk%C3%BD", valid: true, handle: "Žluťoučký" },
-      { input: "text in/č-ž-ř-ď-ť-ň?x=y", valid: true, handle: "č-ž-ř-ď-ť-ň" },
-      { input: "text in/名字/extra/path", valid: true, handle: "名字" },
-      { input: "text in/handle))))", valid: true, handle: "handle" },
-      { input: "text in/handle\\more", valid: true, handle: "handle" },
+    const cases: [string, null][] = [
+      ['', null],
+      ['   ', null],
+      ['<>', null],
+      ['Hello, world!', null],
+      ['I am in love', null],
+      ['https://google.com/search', null],
+      ['in', null],
+      ['IN', null],
+      ['in\\handle', null],
+      ['in:handle', null],
+      ['in|handle', null],
     ];
 
-    describe('valid extraction', () => {
-      it.each(cases)('$valid | $input', ({ input, valid }) => {
-        const result = parseLinkedInProfilePath(input);
-        expect(result !== null).toBe(valid);
-      });
-    });
-
-    describe('handle extraction', () => {
-      it.each(cases)('$handle | $input', ({ input, valid, handle }) => {
-        const result = parseLinkedInProfilePath(input);
-        if (!valid) {
-          expect(result).toBeNull();
-        } else {
-          expect(result).toBe(`/in/${handle}`);
-        }
-      });
+    it.each(cases)('%s → null', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });
 });
