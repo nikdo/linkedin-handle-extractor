@@ -1,1 +1,1 @@
-export { parseLinkedInProfilePath } from './parseLinkedInProfilePath';
+export { parseLinkedInProfilePath } from './parseLinkedInProfilePath.js';

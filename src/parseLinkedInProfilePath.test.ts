@@ -189,7 +189,6 @@ describe('parseLinkedInProfilePath', () => {
   describe('characters that stop handle parsing', () => {
     const cases: [string, string][] = [
       ['in/john.doe', '/in/john'],
-      ['in/john_doe', '/in/john'],
       ['in/john doe', '/in/john'],
       ['in/handle.', '/in/handle'],
       ['in/handle..', '/in/handle'],
@@ -206,6 +205,9 @@ describe('parseLinkedInProfilePath', () => {
       ['in/-', '/in/-'],
       ['in/123456789', '/in/123456789'],
       ['in/John-DOE', '/in/John-DOE'],
+      ['in/john_doe', '/in/john_doe'],
+      ['in/user_name_123', '/in/user_name_123'],
+      ['in/_underscore_', '/in/_underscore_'],
     ];
 
     it.each(cases)('%s → %s', (input, expected) => {
@@ -239,12 +241,10 @@ describe('parseLinkedInProfilePath', () => {
     const cases: [string, string][] = [
       ['in/john%2Ddoe', '/in/john-doe'],
       ['in/%C4%8Desk%C3%BD', '/in/český'],
-      ['in/user%40name', '/in/user@name'],
       ['in/%C4%8Desk%C3%BD-u%C5%BEivatel', '/in/český-uživatel'],
       ['https://www.linkedin.com/in/jos%C3%A9-garc%C3%ADa', '/in/josé-garcía'],
       ['https://www.linkedin.com/in/%C5%A1t%C4%9Bp%C3%A1n-%C5%99eh%C3%A1k-988589206/', '/in/štěpán-řehák-988589206'],
       ['text in/%E5%90%8D%E5%AD%97 more', '/in/名字'],
-      ['in/handle%20with%20spaces', '/in/handle with spaces'],
       ['random IN/%C5%BDlu%C5%A5ou%C4%8Dk%C3%BD', '/in/Žluťoučký'],
     ];
 
@@ -253,11 +253,17 @@ describe('parseLinkedInProfilePath', () => {
     });
   });
 
-  describe('invalid or incomplete percent-encoding', () => {
+  describe('percent-encoding edge cases', () => {
     const cases: [string, string | null][] = [
-      ['in/user%GG', '/in/user'],
-      ['in/user%2', '/in/user'],
-      ['in/%FF%FE', null],
+      ['in/user%GG', '/in/user'],   // invalid encoding, % stops extraction on original
+      ['in/user%2', '/in/user'],    // incomplete encoding, % stops extraction on original
+      ['in/%FF%FE', null],          // invalid UTF-8 sequence, decode fails, no in/ in original
+      // Decoded special chars act as delimiters (extracts valid prefix)
+      ['in/handle%20with%20spaces', '/in/handle'], // %20 = space
+      ['in/user%2Fname', '/in/user'],              // %2F = /
+      ['in/user%40name', '/in/user'],              // %40 = @
+      ['in/user%3Fname', '/in/user'],              // %3F = ?
+      ['in/hello%23world', '/in/hello'],           // %23 = #
     ];
 
     it.each(cases)('%s → %s', (input, expected) => {
@@ -304,6 +310,19 @@ describe('parseLinkedInProfilePath', () => {
     ];
 
     it.each(cases)('%s → null', (input, expected) => {
+      expect(parseLinkedInProfilePath(input)).toBe(expected);
+    });
+  });
+
+  describe('input length limits', () => {
+    const cases: [string, string | null][] = [
+      ['in/' + 'a'.repeat(100), '/in/' + 'a'.repeat(100)],
+      ['in/' + 'a'.repeat(2000), '/in/' + 'a'.repeat(2000)],
+      ['a'.repeat(2048), null], // no in/ but at limit
+      ['a'.repeat(2049), null], // over limit, rejected early
+    ];
+
+    it.each(cases)('%s → %s', (input, expected) => {
       expect(parseLinkedInProfilePath(input)).toBe(expected);
     });
   });

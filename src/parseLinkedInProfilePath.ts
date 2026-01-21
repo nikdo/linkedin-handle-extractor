@@ -5,81 +5,40 @@
  * @returns Normalized profile path as "/in/<handle>" or null if no valid path found
  */
 export function parseLinkedInProfilePath(input: string): `/in/${string}` | null {
-  // Find the first occurrence of "in/" (case-insensitive)
-  const lowerInput = input.toLowerCase();
-  const inIndex = lowerInput.indexOf('in/');
-  
+  if (!input || input.length > 2048) {
+    return null;
+  }
+
+  // Decode percent-encoding upfront (fall back to original if invalid)
+  let decoded = input;
+  try {
+    decoded = decodeURIComponent(input);
+  } catch {
+    // Invalid encoding - use original input
+  }
+
+  const inIndex = decoded.toLowerCase().indexOf('in/');
   if (inIndex === -1) {
     return null;
   }
 
-  // Start scanning the handle from after "in/"
-  const startIndex = inIndex + 3; // length of "in/"
-  
-  // Delimiters that terminate the handle
+  // Delimiters that terminate handle extraction
   const delimiters = new Set([
     '/', '?', '#', '\\',           // URL/path delimiters
     ')', ']', '>',                 // closing brackets
     '.', ',', '…', '—', '–', '·',  // punctuation
   ]);
-  
+
+  // Extract handle - valid chars are Unicode letters, marks, numbers, hyphens, underscores
   let handle = '';
-  let i = startIndex;
-  
-  while (i < input.length) {
-    const char = input[i];
+  for (let i = inIndex + 3; i < decoded.length; i++) {
+    const char = decoded[i];
     
-    // Check for whitespace
-    if (/\s/.test(char)) {
-      break;
-    }
+    if (/\s/.test(char) || delimiters.has(char)) break;
+    if (!/[\p{L}\p{M}\p{N}\-_]/u.test(char)) break;
     
-    // Check for delimiters
-    if (delimiters.has(char)) {
-      break;
-    }
-    
-    // Check for percent-encoding (%XX)
-    if (char === '%') {
-      if (i + 2 < input.length && /^[0-9A-Fa-f]{2}$/.test(input.slice(i + 1, i + 3))) {
-        handle += input.slice(i, i + 3);
-        i += 3;
-        continue;
-      } else {
-        // Invalid percent encoding - treat as delimiter
-        break;
-      }
-    }
-    
-    // Check if it's a valid handle character:
-    // - Unicode letters (\p{L})
-    // - Unicode marks (\p{M})
-    // - Unicode numbers (\p{N})
-    // - ASCII hyphen (-)
-    if (/[\p{L}\p{M}\p{N}\-]/u.test(char)) {
-      handle += char;
-      i++;
-      continue;
-    }
-    
-    // Any other character is a delimiter
-    break;
+    handle += char;
   }
   
-  // Reject empty handle
-  if (handle === '') {
-    return null;
-  }
-  
-  // If handle contains %, try to decode URI components
-  if (handle.includes('%')) {
-    try {
-      handle = decodeURIComponent(handle);
-    } catch {
-      // Decoding failed - invalid percent encoding
-      return null;
-    }
-  }
-  
-  return `/in/${handle}` as `/in/${string}`;
+  return handle ? `/in/${handle}` as `/in/${string}` : null;
 }
